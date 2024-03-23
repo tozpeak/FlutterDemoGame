@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -12,14 +10,14 @@ class GameplayPage extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          SizedBox.expand(
+          const SizedBox.expand(
             child: Image(
               image: AssetImage("assets/images/game_back.png"),
               alignment: Alignment.center,
               fit: BoxFit.cover,
             ),
           ),
-          AspectRatio(
+          const AspectRatio(
             aspectRatio: GameplayContent.gameWidth / GameplayContent.gameHeight,
             child: GameplayContent(),
           ),
@@ -27,7 +25,7 @@ class GameplayPage extends StatelessWidget {
             alignment: Alignment.topLeft,
             child: IconButton(
               onPressed: () => Navigator.pop(context), 
-              icon: Icon(CupertinoIcons.back),
+              icon: const Icon(CupertinoIcons.back),
               alignment: Alignment.topLeft,
               style: ButtonStyle(
                 backgroundColor: MaterialStateProperty.all(Colors.white60),
