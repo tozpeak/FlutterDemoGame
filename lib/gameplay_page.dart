@@ -52,7 +52,7 @@ class GameplayContent extends StatefulWidget {
 class _GameplayContentState extends State<GameplayContent> {
   double _paddleCenterPosition = GameplayContent.gameWidth / 2;
 
-  final _paddleSize = Size(60, 10);
+  final _paddleSize = const Size(60, 10);
 
 
   @override
@@ -73,14 +73,12 @@ class _GameplayContentState extends State<GameplayContent> {
               children: [
                 SizedBox.expand(
                   child: Align(
-                    alignment: Alignment(
-                      (
-                        2 * _paddleCenterPosition
-                        / (GameplayContent.gameWidth-_paddleSize.width)
-                      ) 
-                      - 1
-                      - _paddleSize.width / (GameplayContent.gameWidth - _paddleSize.width), 
-                      0.8
+                    alignment: FractionalOffset(
+                      (_paddleCenterPosition - _paddleSize.width / 2) 
+                      / 
+                      (GameplayContent.gameWidth-_paddleSize.width)
+                      , 
+                      0.9
                     ),
                     child: SizedBox.fromSize(
                       size: _paddleSize * ratio,
