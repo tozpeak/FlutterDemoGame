@@ -21,23 +21,27 @@ class MainMenuPage extends StatelessWidget {
               fit: BoxFit.cover,
             ),
           ),
-          Wrap(
-            alignment: WrapAlignment.center,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            direction: Axis.vertical,
-            spacing: 25,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pushNamed(context, "/game"), 
-                style: style,
-                child: const Text("Game"),
+          SizedBox(
+            height: 300,
+            child: FractionallySizedBox(
+              widthFactor: 0.8,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pushNamed(context, "/game"), 
+                    style: style,
+                    child: const Text("Game"),
+                  ),
+                  TextButton(
+                    onPressed: null, //() => Navigator.pushNamed(context, "/gameplay"), 
+                    style: style,
+                    child: const Text("Credits"),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: null, //() => Navigator.pushNamed(context, "/gameplay"), 
-                style: style,
-                child: const Text("Credits"),
-              ),
-            ],
+            ),
           ),
         ],
       ),
