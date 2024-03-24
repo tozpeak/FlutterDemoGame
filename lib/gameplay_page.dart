@@ -58,7 +58,7 @@ class _GameplayContentState extends State<GameplayContent>
 
   Offset _paddleCenterPosition = const Offset(
     GameplayContent.gameWidth / 2, 
-    GameplayContent.gameHeight * 0.9
+    GameplayContent.gameHeight * 0.85
   );
 
   final _paddleSize = const Size(60, 20);
@@ -165,6 +165,8 @@ class _GameplayContentState extends State<GameplayContent>
         i--;
       }
     }
+
+    if(targets.isEmpty) _isGameOver = true;
   }
 
   bool _collideBallWith(Rect rect) {
@@ -182,16 +184,14 @@ class _GameplayContentState extends State<GameplayContent>
         final size = constrains.biggest;
         final ratio = size.width / GameplayContent.gameWidth;
         return GestureDetector(
-          onPanDown: (detailds) {
+          onPanDown: (details) {
             if(!_controller.isAnimating) {
               _startAnimation();
             }
+            _updatePaddlePos(details.localPosition.dx, ratio);
           },
           onPanUpdate: (details) => setState(() {
-            _paddleCenterPosition = Offset(
-              details.localPosition.dx / ratio, 
-              _paddleCenterPosition.dy
-            );
+            _updatePaddlePos(details.localPosition.dx, ratio);
             //_physicsUpdate(0.3);
           }),
           child: Container(
@@ -240,11 +240,28 @@ class _GameplayContentState extends State<GameplayContent>
                     ),
                   ),
                 ),
+                if(_isGameOver) SizedBox.expand(
+                  child: Center(
+                    child: Text(
+                      "GAME OVER",
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        color: targets.isEmpty ? Colors.green : Colors.red
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
         );
       }
+    );
+  }
+
+  void _updatePaddlePos(double dx, double ratio) {
+    _paddleCenterPosition = Offset(
+      dx / ratio, 
+      _paddleCenterPosition.dy
     );
   }
 } 
