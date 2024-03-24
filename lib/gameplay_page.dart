@@ -52,16 +52,20 @@ class GameplayContent extends StatefulWidget {
 
 class _GameplayContentState extends State<GameplayContent> 
     with SingleTickerProviderStateMixin {
+
+  bool debugPhysics = false;
   
   late AnimationController _controller;
   bool _isGameOver = false;
 
-  Offset _paddleCenterPosition = const Offset(
-    GameplayContent.gameWidth / 2, 
-    GameplayContent.gameHeight * 0.85
+  Rect _paddle = Rect.fromCenter(
+    center: const Offset(
+      GameplayContent.gameWidth / 2, 
+      GameplayContent.gameHeight * 0.85
+    ),
+    width: 60,
+    height: 20,
   );
-
-  final _paddleSize = const Size(60, 20);
 
   Rect ball = Rect.fromCircle(
     center: const Offset(GameplayContent.gameWidth / 2, GameplayContent.gameHeight * 0.8),
@@ -70,11 +74,11 @@ class _GameplayContentState extends State<GameplayContent>
   Offset ballSpeed = Offset.fromDirection(-1, 280);
     
   final walls = [
-    Rect.fromPoints(const Offset(-10, -10), const Offset(0, GameplayContent.gameHeight)),
-    Rect.fromPoints(const Offset(-10, -10), const Offset(GameplayContent.gameWidth, 0)),
+    Rect.fromPoints(const Offset(-100, -100), const Offset(0, GameplayContent.gameHeight)),
+    Rect.fromPoints(const Offset(-100, -100), const Offset(GameplayContent.gameWidth, 0)),
     Rect.fromPoints(
-      const Offset(GameplayContent.gameWidth, -10), 
-      const Offset(GameplayContent.gameWidth, GameplayContent.gameHeight)
+      const Offset(GameplayContent.gameWidth, -100), 
+      const Offset(GameplayContent.gameWidth+100, GameplayContent.gameHeight)
     ),
     
   ];
@@ -93,9 +97,18 @@ class _GameplayContentState extends State<GameplayContent>
 
     _controller.addListener(() {
       setState(() {
-        _physicsUpdate(0.02);
+        if(!debugPhysics) _physicsUpdate(0.02);
       });
     });
+    _resetLevel();
+  }
+
+  void _resetLevel() {
+    _isGameOver = false;
+    targets.clear();
+    ballSpeed = Offset.fromDirection(-1, 280);
+    ball = ball.shift(-ball.center);
+    ball = ball.shift(const Offset(GameplayContent.gameWidth / 2, GameplayContent.gameHeight * 0.8));
 
     const rows = 10;
     const colums = 5;
@@ -114,10 +127,15 @@ class _GameplayContentState extends State<GameplayContent>
         ));
       }
     }
+
+    //ball = ball.shift(-ball.center);
+    //ball = ball.translate(0, _paddle.center.dy - 5);
+
+    //targets.removeRange(1, targets.length);
   }
 
   void _startAnimation() {
-    _controller.repeat(min: 0, max: 1, period: Durations.short1);
+    _controller.repeat(min: 0, max: 1, period: const Duration(milliseconds: 50));
   }
 
   @override 
@@ -147,14 +165,10 @@ class _GameplayContentState extends State<GameplayContent>
     for (var wall in walls) {
       _collideBallWith(wall);
     }
-    _collideBallWith(Rect.fromCenter(
-      center: _paddleCenterPosition, 
-      width: _paddleSize.width, 
-      height: _paddleSize.height,
-    ));
+    _collideBallWith(_paddle);
+    //_collideBallWithPaddle();
 
     if(_collideBallWith(gameOverCollider)) {
-      print("Game Over");
       ballSpeed = Offset.zero;
       _isGameOver = true;
     }
@@ -169,9 +183,20 @@ class _GameplayContentState extends State<GameplayContent>
     if(targets.isEmpty) _isGameOver = true;
   }
 
-  bool _collideBallWith(Rect rect) {
-    var normal = CustomPhysics.collisionSphereToBox(ball, rect);
-    if(normal == null) return false;
+  bool _collideBallWith(Rect rect, {debug = false}) {
+    var normals = CustomPhysics.collisionSphereToBox(ball, rect, debug: debug);
+    if(normals.isEmpty) return false;
+
+    var normal = normals.fold(
+      Offset.zero, 
+      (previousValue, element) =>
+        CustomPhysics.dotProduct(element, ballSpeed) < 0 
+        ? previousValue + element
+        : previousValue
+    );
+
+    normal = Offset.fromDirection(normal.direction);
+
     ballSpeed = CustomPhysics.reflectSpeed(ballSpeed, normal);
     return true;
   }
@@ -179,89 +204,129 @@ class _GameplayContentState extends State<GameplayContent>
   @override
   Widget build(BuildContext context) {
 
-    return LayoutBuilder(
-      builder: (context, constrains) {
-        final size = constrains.biggest;
-        final ratio = size.width / GameplayContent.gameWidth;
-        return GestureDetector(
-          onPanDown: (details) {
-            if(!_controller.isAnimating) {
-              _startAnimation();
-            }
-            _updatePaddlePos(details.localPosition.dx, ratio);
-          },
-          onPanUpdate: (details) => setState(() {
-            _updatePaddlePos(details.localPosition.dx, ratio);
-            //_physicsUpdate(0.3);
-          }),
-          child: Container(
-            color: Colors.white24,
-            child: Stack(
-              //TODO: use CustomMultiChildLayout instead
-              children: [
-                SizedBox.expand(
-                  child: Align(
-                    alignment: _getViewportOffset(_paddleCenterPosition, _paddleSize),
-                    child: SizedBox.fromSize(
-                      size: _paddleSize * ratio,
-                      child: Container(color: Colors.green,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: _paddleSize.width * ratio / 2 - 1),
-                          child: Container(
-                            color: Colors.black,
+    return Container(
+      constraints: const BoxConstraints.expand(),
+      child: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constrains) {
+              final size = constrains.biggest;
+              final ratio = size.width / GameplayContent.gameWidth;
+              return GestureDetector(
+                onPanDown: (details) {
+                  if(!_controller.isAnimating) {
+                    _startAnimation();
+                  }
+                  _updatePaddlePos(details.localPosition.dx, ratio);
+                },
+                onPanUpdate: (details) => setState(() {
+                  _updatePaddlePos(details.localPosition.dx, ratio);
+                }),
+                child: Container(
+                  color: Colors.white24,
+                  child: Stack(
+                    //TODO: use CustomMultiChildLayout instead
+                    children: [
+                      SizedBox.expand(
+                        child: Align(
+                          alignment: _getViewportOffset(_paddle.center, _paddle.size),
+                          child: SizedBox.fromSize(
+                            size: _paddle.size * ratio,
+                            child: Container(color: Colors.green,
+                              child: Padding(
+                                padding: EdgeInsets.symmetric(horizontal: _paddle.size.width * ratio / 2 - 1),
+                                child: Container(
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                ),
-                SizedBox.expand(
-                  child: Align(
-                    alignment: _getViewportOffset(ball.center, ball.size),
-                    child: SizedBox.fromSize(
-                      size: ball.size * ratio,
-                      child: Container(
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white,
+                      SizedBox.expand(
+                        child: Align(
+                          alignment: _getViewportOffset(ball.center, ball.size),
+                          child: SizedBox.fromSize(
+                            size: ball.size * ratio,
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      ...targets.map<Widget>((target) => 
+                        SizedBox.expand(
+                          child: Align(
+                            alignment: _getViewportOffset(target.center, target.size),
+                            child: SizedBox.fromSize(
+                              size: target.size * ratio,
+                              child: Container(color: Colors.blue[200]),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if(_isGameOver) SizedBox.expand(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "GAME OVER",
+                              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                color: targets.isEmpty ? Colors.green : Colors.red
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => setState(() {
+                                _resetLevel();
+                              }),
+                              style: const ButtonStyle(
+                                backgroundColor: MaterialStatePropertyAll(Colors.white60)
+                              ),
+                              child: const Text("Restart"),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                ...targets.map<Widget>((target) => 
-                  SizedBox.expand(
-                    child: Align(
-                      alignment: _getViewportOffset(target.center, target.size),
-                      child: SizedBox.fromSize(
-                        size: target.size * ratio,
-                        child: Container(color: Colors.blue[200]),
-                      ),
-                    ),
+              );
+            }
+          ),
+
+          Align(
+            alignment: Alignment.topRight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  onPressed: () => setState(() => debugPhysics = !debugPhysics), 
+                  icon: Icon(debugPhysics ? CupertinoIcons.play : CupertinoIcons.pause),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.white60),
                   ),
                 ),
-                if(_isGameOver) SizedBox.expand(
-                  child: Center(
-                    child: Text(
-                      "GAME OVER",
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: targets.isEmpty ? Colors.green : Colors.red
-                      ),
-                    ),
+                if(debugPhysics) IconButton(
+                  onPressed: () => setState(() => _physicsUpdate(0.02)), 
+                  icon: const Icon(CupertinoIcons.forward_end),
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(Colors.white60),
                   ),
                 ),
               ],
             ),
           ),
-        );
-      }
+        ],
+      ),
     );
   }
 
-  void _updatePaddlePos(double dx, double ratio) {
-    _paddleCenterPosition = Offset(
-      dx / ratio, 
-      _paddleCenterPosition.dy
-    );
+  void _updatePaddlePos(double targetX, double ratio) {
+    _paddle = _paddle.translate(targetX / ratio - _paddle.center.dx, 0);
+
+    if(debugPhysics) _physicsUpdate(0.02);
   }
 } 
