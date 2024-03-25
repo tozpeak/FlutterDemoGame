@@ -10,7 +10,7 @@
     - [ ] Paddle
     - [ ] Blocks
     - [ ] Game area
-- [ ] Sound
+- [x] Sound
 - [ ] Music
 - [ ] Credits
 - [ ] UI for Gameplay
@@ -21,5 +21,5 @@
 
 - [ ] Physics issue with paddle
 - [ ] Review gameplay elements layout
-- [ ] Builds in release configuration are crashing
+- [x] Builds in release configuration are crashing
 - [ ] 
