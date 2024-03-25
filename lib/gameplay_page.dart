@@ -8,36 +8,34 @@ class GameplayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const SizedBox.expand(
-            child: Image(
-              image: AssetImage("assets/images/game_back.png"),
-              alignment: Alignment.center,
-              fit: BoxFit.cover,
-            ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const SizedBox.expand(
+          child: Image(
+            image: AssetImage("assets/images/game_back.png"),
+            alignment: Alignment.center,
+            fit: BoxFit.cover,
           ),
-          const AspectRatio(
-            aspectRatio: GameplayContent.gameWidth / GameplayContent.gameHeight,
-            //width: 360,
-            //height: 800,
-            child: GameplayContent(),
-          ),
-          Align(
+        ),
+        const AspectRatio(
+          aspectRatio: GameplayContent.gameWidth / GameplayContent.gameHeight,
+          //width: 360,
+          //height: 800,
+          child: GameplayContent(),
+        ),
+        Align(
+          alignment: Alignment.topLeft,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context), 
+            icon: const Icon(CupertinoIcons.back),
             alignment: Alignment.topLeft,
-            child: IconButton(
-              onPressed: () => Navigator.pop(context), 
-              icon: const Icon(CupertinoIcons.back),
-              alignment: Alignment.topLeft,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.white60),
-              ),
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(Colors.white60),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
