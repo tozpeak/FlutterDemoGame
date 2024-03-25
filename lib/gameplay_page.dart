@@ -225,10 +225,10 @@ class _GameplayContentState extends State<GameplayContent>
                 child: Container(
                   color: Colors.white24,
                   child: Stack(
+                    fit: StackFit.expand,
                     //TODO: use CustomMultiChildLayout instead
                     children: [
-                      SizedBox.expand(
-                        child: Align(
+                      Align(
                           alignment: _getViewportOffset(_paddle.center, _paddle.size),
                           child: SizedBox.fromSize(
                             size: _paddle.size * ratio,
@@ -242,9 +242,7 @@ class _GameplayContentState extends State<GameplayContent>
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox.expand(
-                        child: Align(
+                      Align(
                           alignment: _getViewportOffset(ball.center, ball.size),
                           child: SizedBox.fromSize(
                             size: ball.size * ratio,
@@ -252,14 +250,12 @@ class _GameplayContentState extends State<GameplayContent>
                               decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
-                              ),
                             ),
                           ),
                         ),
                       ),
                       ...targets.map<Widget>((target) => 
-                        SizedBox.expand(
-                          child: Align(
+                        Align(
                             alignment: _getViewportOffset(target.center, target.size),
                             child: SizedBox.fromSize(
                               size: target.size * ratio,
@@ -267,9 +263,7 @@ class _GameplayContentState extends State<GameplayContent>
                             ),
                           ),
                         ),
-                      ),
-                      if(_isGameOver) SizedBox.expand(
-                        child: Column(
+                      if(_isGameOver) Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
@@ -288,7 +282,6 @@ class _GameplayContentState extends State<GameplayContent>
                               child: const Text("Restart"),
                             ),
                           ],
-                        ),
                       ),
                     ],
                   ),
