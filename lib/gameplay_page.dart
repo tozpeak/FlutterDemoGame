@@ -268,11 +268,19 @@ class _GameplayContentState extends State<GameplayContent>
                           alignment: _getViewportOffset(_paddle.center, _paddle.size),
                           child: SizedBox.fromSize(
                             size: _paddle.size * ratio,
-                            child: Container(color: Colors.green,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: _paddle.size.width * ratio / 2 - 1),
-                                child: Container(
-                                  color: Colors.black,
+                            child: const DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                              ),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 2,
+                                  height: double.infinity,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
@@ -282,8 +290,8 @@ class _GameplayContentState extends State<GameplayContent>
                           alignment: _getViewportOffset(ball.center, ball.size),
                           child: SizedBox.fromSize(
                             size: ball.size * ratio,
-                            child: Container(
-                              decoration: const BoxDecoration(
+                            child: const DecoratedBox(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
                             ),
@@ -295,7 +303,11 @@ class _GameplayContentState extends State<GameplayContent>
                             alignment: _getViewportOffset(target.center, target.size),
                             child: SizedBox.fromSize(
                               size: target.size * ratio,
-                              child: Container(color: Colors.blue[200]),
+                              child: const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Color.fromRGBO(144, 202, 249, 1),
+                                ),
+                              ),
                             ),
                           ),
                         ),
