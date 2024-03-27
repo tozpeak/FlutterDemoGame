@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:demo_bricks/custom_physics.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -7,36 +8,34 @@ class GameplayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const SizedBox.expand(
-            child: Image(
-              image: AssetImage("assets/images/game_back.png"),
-              alignment: Alignment.center,
-              fit: BoxFit.cover,
-            ),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        const SizedBox.expand(
+          child: Image(
+            image: AssetImage("assets/images/game_back.png"),
+            alignment: Alignment.center,
+            fit: BoxFit.cover,
           ),
-          const AspectRatio(
-            aspectRatio: GameplayContent.gameWidth / GameplayContent.gameHeight,
-            //width: 360,
-            //height: 800,
-            child: GameplayContent(),
-          ),
-          Align(
+        ),
+        const AspectRatio(
+          aspectRatio: GameplayContent.gameWidth / GameplayContent.gameHeight,
+          //width: 360,
+          //height: 800,
+          child: GameplayContent(),
+        ),
+        Align(
+          alignment: Alignment.topLeft,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context), 
+            icon: const Icon(CupertinoIcons.back),
             alignment: Alignment.topLeft,
-            child: IconButton(
-              onPressed: () => Navigator.pop(context), 
-              icon: const Icon(CupertinoIcons.back),
-              alignment: Alignment.topLeft,
-              style: ButtonStyle(
-                backgroundColor: MaterialStateProperty.all(Colors.white60),
-              ),
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(Colors.white60),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -84,11 +83,39 @@ class _GameplayContentState extends State<GameplayContent>
   ];
 
   Rect gameOverCollider = Rect.fromPoints(
-    const Offset(-10, GameplayContent.gameHeight * 0.95), 
-    const Offset(GameplayContent.gameWidth+10, GameplayContent.gameHeight)
+    const Offset(-1000, GameplayContent.gameHeight * 0.95), 
+    const Offset(GameplayContent.gameWidth+1000, GameplayContent.gameHeight)
   );
 
   final targets = <Rect>[];
+
+  final audioCache = (AudioCache(prefix: "assets/audio/")
+  ..loadAll([
+    "game_finished.wav",
+    "game_over.wav",
+    "hit_target.wav",
+    "hit_wall.wav"
+  ])
+  );
+
+  final audioPlayers = List.generate(
+    4, 
+    (index) => AudioPlayer()
+      ..setPlayerMode(PlayerMode.lowLatency)
+      ..setReleaseMode(ReleaseMode.release)
+  );
+  int audioPlayerIndex = 0;
+
+  _playSound(String soundName) {
+    final audioPlayer = audioPlayers[audioPlayerIndex++];
+    if(audioPlayerIndex >= audioPlayers.length) audioPlayerIndex = 0;
+    audioPlayer.audioCache = audioCache;
+
+    if(audioPlayer.state != PlayerState.playing) {
+      audioPlayer.setSourceAsset("$soundName.wav");
+      audioPlayer.resume();
+    }
+  }
   
   @override
   void initState() {
@@ -140,6 +167,10 @@ class _GameplayContentState extends State<GameplayContent>
 
   @override 
   void dispose() {
+    for (var element in audioPlayers) {
+      element.dispose();
+    }
+    audioCache.clearAll();
     _controller.dispose();
     super.dispose();
   }
@@ -163,27 +194,30 @@ class _GameplayContentState extends State<GameplayContent>
     //print(ball.center);
 
     for (var wall in walls) {
-      _collideBallWith(wall);
+      _collideBallWith(wall, hitSound: "hit_wall");
     }
-    _collideBallWith(_paddle);
+    _collideBallWith(_paddle, hitSound: "hit_wall");
     //_collideBallWithPaddle();
 
-    if(_collideBallWith(gameOverCollider)) {
+    if(_collideBallWith(gameOverCollider, hitSound: "game_over")) {
       ballSpeed = Offset.zero;
       _isGameOver = true;
     }
 
     for (var i = 0; i < targets.length; i++) {
-      if(_collideBallWith(targets[i])) {
+      if(_collideBallWith(targets[i], hitSound: "hit_target")) {
         targets.removeAt(i);
         i--;
       }
     }
 
-    if(targets.isEmpty) _isGameOver = true;
+    if(targets.isEmpty) { 
+      _isGameOver = true;
+      _playSound("game_finished");
+    }
   }
 
-  bool _collideBallWith(Rect rect, {debug = false}) {
+  bool _collideBallWith(Rect rect, {debug = false, String? hitSound}) {
     var normals = CustomPhysics.collisionSphereToBox(ball, rect, debug: debug);
     if(normals.isEmpty) return false;
 
@@ -198,6 +232,8 @@ class _GameplayContentState extends State<GameplayContent>
     normal = Offset.fromDirection(normal.direction);
 
     ballSpeed = CustomPhysics.reflectSpeed(ballSpeed, normal);
+    if(hitSound != null) _playSound(hitSound);
+
     return true;
   }
 
@@ -225,51 +261,57 @@ class _GameplayContentState extends State<GameplayContent>
                 child: Container(
                   color: Colors.white24,
                   child: Stack(
+                    fit: StackFit.expand,
                     //TODO: use CustomMultiChildLayout instead
                     children: [
-                      SizedBox.expand(
-                        child: Align(
+                      Align(
                           alignment: _getViewportOffset(_paddle.center, _paddle.size),
                           child: SizedBox.fromSize(
                             size: _paddle.size * ratio,
-                            child: Container(color: Colors.green,
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(horizontal: _paddle.size.width * ratio / 2 - 1),
-                                child: Container(
-                                  color: Colors.black,
+                            child: const DecoratedBox(
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                              ),
+                              child: Center(
+                                child: SizedBox(
+                                  width: 2,
+                                  height: double.infinity,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: Colors.black,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox.expand(
-                        child: Align(
+                      Align(
                           alignment: _getViewportOffset(ball.center, ball.size),
                           child: SizedBox.fromSize(
                             size: ball.size * ratio,
-                            child: Container(
-                              decoration: const BoxDecoration(
+                            child: const DecoratedBox(
+                              decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: Colors.white,
-                              ),
                             ),
                           ),
                         ),
                       ),
                       ...targets.map<Widget>((target) => 
-                        SizedBox.expand(
-                          child: Align(
+                        Align(
                             alignment: _getViewportOffset(target.center, target.size),
                             child: SizedBox.fromSize(
                               size: target.size * ratio,
-                              child: Container(color: Colors.blue[200]),
+                              child: const DecoratedBox(
+                                decoration: BoxDecoration(
+                                  color: Color.fromRGBO(144, 202, 249, 1),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      if(_isGameOver) SizedBox.expand(
-                        child: Column(
+                      if(_isGameOver) Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
@@ -288,7 +330,6 @@ class _GameplayContentState extends State<GameplayContent>
                               child: const Text("Restart"),
                             ),
                           ],
-                        ),
                       ),
                     ],
                   ),
